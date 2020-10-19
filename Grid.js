@@ -1,4 +1,4 @@
-class GridDrawing {
+class Grid {
 
     constructor(width, boxWidthPixel, image) {
         this.width = width;
@@ -88,6 +88,13 @@ class GridDrawing {
         this.columnNumbers[index] = numbers;
         return numbers;
     }
+
+
+    // change this.board[][] boolean to integer 0,1,2
+    // 0 as white
+    // 1 as black
+    // 2 as X sign
+    // create lock for X sign too
 
     evaluateChange(xPos, yPos) {
         if (this.board[xPos][yPos] && !this.lockBlack) {

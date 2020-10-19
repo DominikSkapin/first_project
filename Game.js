@@ -1,13 +1,15 @@
 class Game {
 
+    // change logic behind Drawing image and Solving image!!
+
     constructor(width, boxWidthPixel, image) {
         this.width = width;
         this.boxWidthPixel = boxWidthPixel;
         if (image === null) {
-            this.grid = new GridDrawing(width, boxWidthPixel);
+            this.grid = new Grid(width, boxWidthPixel);
             this.areWeSolving = false;
         } else {
-            this.grid = new GridSolving(width, boxWidthPixel, image);
+            this.grid = new Grid(width, boxWidthPixel, image);
             this.areWeSolving = true;
         }
 
