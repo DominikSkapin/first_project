@@ -92599,8 +92599,8 @@
               /**
                * @function layout
                * @param {Number[][]} dim
-               * @param {ImageInfo[]} dimImageInfos
-               * @param {ImageInfo[]} cellImageInfos
+               * @param {MyImage[]} dimImageInfos
+               * @param {MyImage[]} cellImageInfos
                * @return {Object}
                *
                * lays out the curves in a dimension (row or col) into two

@@ -1,21 +1,28 @@
+//constants and global definitions
+const IMAGE_STORAGE = "images";
 let red_clr;
 let blk_clr;
 let wht_clr;
 let rowLength;
-let boxWidth = 50;
+let maxNumbersInRowColumn;
+let boxWidth = 20;
 let board;
 let boxesRows;
 let boxesColumns;
 let prevXPos;
 let prevYPos;
-let mouseClickEnabled = true;
-let mouseDragEnabled = false;
+let lockRow;
+let lockColumn;
+let lockWhite;
+let lockBlack;
+let images;
 let startGameButtonDiv;
 let lengthInputDiv;
 let gameHeaderDiv;
 let widthPDiv;
 let saveImageButtonDiv;
-let mouseDraggedRadioDiv;
+let loadImageButtonDiv;
+let clearStorageButtonDiv;
 
 function setup() {
 
@@ -25,22 +32,30 @@ function setup() {
     lengthInputDiv = document.getElementById("length_input");
     gameHeaderDiv = document.getElementById("game_header");
     widthPDiv = document.getElementById("width_p");
-    saveImageButtonDiv = document.getElementById("save_image");
-    mouseDraggedRadioDiv = document.getElementById("mouse_dragged_radio");
-
+    saveImageButtonDiv = document.getElementById("save_image_button");
+    loadImageButtonDiv = document.getElementById("load_image_button");
+    clearStorageButtonDiv = document.getElementById("clear_storage_button");
     startGameButtonDiv.addEventListener("click", setupGame);
-    saveImageButtonDiv.addEventListener("click", saveImage);
 }
 
 function setupGame() {
+
+    if (loadImagesFromStorage() != null) {
+        images = loadImagesFromStorage();
+    } else {
+        images = [];
+    }
 
     gameHeaderDiv.style.display = "block";
     gameStartDiv.style.display = "none";
     canvasDiv.style.display = "block";
     gameHeaderDiv.style.display = "block";
+    saveImageButtonDiv.addEventListener("click", saveImage);
+    loadImageButtonDiv.addEventListener("click", loadImagesFromStorage);
+    clearStorageButtonDiv.addEventListener("click", clearImageStorage);
 
     if (lengthInputDiv.value != null && lengthInputDiv.value > 3) {
-        rowLength = lengthInputDiv.value;
+        rowLength = parseInt(lengthInputDiv.value);
     }
     else if (lengthInputDiv.value > 30) {
         rowLength = 30;
@@ -48,22 +63,17 @@ function setupGame() {
         rowLength = 15;
     }
     widthPDiv.innerHTML = "Grid width: " + rowLength;
+    maxNumbersInRowColumn = Math.ceil(rowLength / 2);
 
-    if (mouseDraggedRadioDiv.checked) {
-        mouseDragEnabled = true;
-        mouseClickEnabled = false;
-    } else {
-        mouseDragEnabled = false;
-        mouseClickEnabled = true;
-    }
-
-    let gameCanvas = createCanvas((rowLength + 3) * boxWidth, (rowLength + 3) * boxWidth);
+    let gameCanvas = createCanvas((maxNumbersInRowColumn * 16) * boxWidth, (maxNumbersInRowColumn * 16) * boxWidth);
     gameCanvas.parent(canvasDiv);
 
-    red_clr = color(122, 122, 122);
+    background(255);
+    red_clr = color(255,99,71);
     blk_clr = color(0);
     wht_clr = color(255);
-    background(255);
+    prevXPos = -1;
+    prevYPos = -1;
     board = [];
     setupNumberBoxes();
 
@@ -84,9 +94,9 @@ function setupGame() {
 
 }
 
-function mouseClicked() {
+function mousePressed(firstOne) {
 
-    if (mouseClickEnabled) {
+    if (firstOne) {
         let xPos = Math.floor(mouseX / boxWidth);
         let yPos = Math.floor(mouseY / boxWidth);
 
@@ -95,34 +105,60 @@ function mouseClicked() {
             evaluateChange(xPos, yPos);
         }
     }
+}
+
+function mouseClicked() {
+    prevXPos = -1;
+    prevYPos = -1;
+    lockColumn = -1;
+    lockRow = -1;
+    lockBlack = false;
+    lockWhite = false;
 }
 
 function mouseDragged() {
 
-    if (mouseDragEnabled) {
-        let xPos = Math.floor(mouseX / boxWidth);
-        let yPos = Math.floor(mouseY / boxWidth);
+    let xPos = Math.floor(mouseX / boxWidth);
+    let yPos = Math.floor(mouseY / boxWidth);
 
-        if (prevXPos !== xPos || prevYPos !== yPos) {
+    if (prevYPos === -1 && prevXPos === -1) {
+        mousePressed(true);
 
+    } else if (prevXPos !== xPos && prevYPos === yPos && lockColumn === -1 && (lockRow === -1 || lockRow === yPos)) {
+
+        lockRow = yPos;
         if (xPos >= 0 && xPos < rowLength &&
             yPos >= 0 && yPos < rowLength) {
             evaluateChange(xPos, yPos);
         }
+
+    } else if (prevXPos === xPos && prevYPos !== yPos && lockRow === -1 && (lockColumn === -1 || lockColumn === xPos)) {
+
+        lockColumn = xPos;
+        if (xPos >= 0 && xPos < rowLength &&
+            yPos >= 0 && yPos < rowLength) {
+            evaluateChange(xPos, yPos);
+        }
+
     }
     prevXPos = xPos;
     prevYPos = yPos;
-    }
 }
 
 function evaluateChange(xPos, yPos) {
-    if (board[xPos][yPos]) {
+    if (board[xPos][yPos] && !lockBlack) {
+        if (lockRow === -1 && lockColumn === -1) {
+            lockWhite = true;
+        }
         drawWhite(xPos, yPos);
         board[xPos][yPos] = false;
         evaluateRow(yPos);
         evaluateColumn(xPos);
         updateBoxes(xPos, yPos);
-    } else {
+    } else if (!board[xPos][yPos] && !lockWhite) {
+        if (lockRow === -1 && lockColumn === -1) {
+            lockBlack = true;
+        }
         drawBlack(xPos, yPos);
         board[xPos][yPos] = true;
         evaluateRow(yPos);
@@ -195,12 +231,12 @@ function drawNumberBoxRow(x, y) {
 
     fill(wht_clr);
     stroke(blk_clr);
-    rect(x * boxWidth, y * boxWidth, boxWidth * 3, boxWidth);
+    rect(x * boxWidth, y * boxWidth, maxNumbersInRowColumn * 16, boxWidth);
     fill(blk_clr);
     stroke(blk_clr);
     textAlign(CENTER, CENTER);
     let textString = parseTextforBox(true, y);
-    text(textString , x * boxWidth, y * boxWidth, boxWidth * 3, boxWidth);
+    text(textString , x * boxWidth, y * boxWidth, maxNumbersInRowColumn * 16, boxWidth);
     this.clicked = false;
 }
 
@@ -208,12 +244,12 @@ function drawNumberBoxColumn(x, y) {
 
     fill(wht_clr);
     stroke(blk_clr);
-    rect(x * boxWidth, y * boxWidth, boxWidth, boxWidth * 3);
+    rect(x * boxWidth, y * boxWidth, boxWidth, maxNumbersInRowColumn * 16);
     fill(blk_clr);
     stroke(blk_clr);
     textAlign(CENTER, CENTER);
     let textString = parseTextforBox(false, x);
-    text(textString, x * boxWidth, y * boxWidth, boxWidth, boxWidth * 3);
+    text(textString, x * boxWidth, y * boxWidth, boxWidth, maxNumbersInRowColumn * 16);
     this.clicked = false;
 }
 
@@ -247,4 +283,28 @@ function setupNumberBoxes() {
 }
 
 function saveImage() {
+    let image = {
+        name : "first_image",
+        width : rowLength,
+        rows : boxesRows,
+        columns : boxesColumns
+    };
+    images.push(image);
+    console.log("pushing image:");
+    console.log(image);
+    console.log("all images:");
+    console.log(images);
+    localStorage.setItem(IMAGE_STORAGE, JSON.stringify(images));
+}
+
+function loadImagesFromStorage() {
+    console.log(JSON.parse(localStorage.getItem(IMAGE_STORAGE)));
+    return JSON.parse(localStorage.getItem(IMAGE_STORAGE));
+}
+
+function clearImageStorage() {
+    localStorage.clear();
+    images = [];
+    console.log("cleared");
+    console.log(JSON.parse(localStorage.getItem(IMAGE_STORAGE)));
 }
